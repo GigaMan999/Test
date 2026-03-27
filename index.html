@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>دفتر الملاحظات - سحابة الكتابة</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        :root {
+            --bg-page: #f4f7fc;
+            --card-bg: #ffffff;
+            --text-primary: #1e2a3e;
+            --text-secondary: #334e68;
+            --border: #dce5ef;
+            --input-bg: #ffffff;
+            --btn-primary: #2c7da0;
+            --btn-primary-hover: #1f5e7a;
+            --btn-secondary: #e9ecef;
+            --btn-secondary-hover: #dce2e8;
+            --danger: #e53e3e;
+            --danger-hover: #c53030;
+            --success: #2b9348;
+            --success-hover: #1f723a;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            --note-bg: #fef9e3;
+        }
+
+        body.dark {
+            --bg-page: #121826;
+            --card-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e6;
+            --border: #2d3a4e;
+            --input-bg: #0f172a;
+            --btn-secondary: #334155;
+            --btn-secondary-hover: #475569;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --note-bg: #2d2a1e;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', 'Tajawal', 'Roboto', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        /* Main container */
+        .app-container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 2rem;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        /* Header controls */
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theme-lang {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: var(--btn-secondary);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--btn-secondary-hover);
+            transform: scale(0.97);
+        }
+
+        /* Form elements */
+        input, textarea {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            outline: none;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--btn-primary);
+            box-shadow: 0 0 0 2px rgba(44, 125, 160, 0.3);
+        }
+
+        button {
+            background: var(--btn-primary);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--btn-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        /* notes grid */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        .note-card {
+            background: var(--note-bg);
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            border-right: 4px solid var(--btn-primary);
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            transition: 0.1s;
+        }
+
+        .note-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .note-date {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* auth screens */
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            background: rgba(229, 62, 62, 0.1);
+            padding: 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .flex-btns {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        hr {
+            margin: 1rem 0;
+            border-color: var(--border);
+        }
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+        .note-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+        .small-btn {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+            border-radius: 1rem;
+        }
+        @media (max-width: 640px) {
+            .card { padding: 1.25rem; }
+            h2 { font-size: 1.4rem; }
+        }
+
+        /* Toggle Switch - From Uiverse.io by vikramsinghnegi */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle label {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+
+        .toggle label:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        .toggle input:checked + label {
+            background-color: #2c7da0;
+        }
+
+        .toggle input:checked + label:before {
+            transform: translateX(30px);
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="appRoot">
+    <!-- سيتم عرض المحتوى ديناميكيًا عبر JS -->
+</div>
+
+<script>
+    // ---------- مفتاح التخزين ----------
+    const STORAGE_USERS = "secure_notes_users";
+    const STORAGE_NOTES_PREFIX = "user_notes_";
+    
+    // ---------- الحالة العامة ----------
+    let currentUser = null;          // { username, password }
+    let currentLang = "ar";          // 'ar' or 'en'
+    let isDark = false;
+    
+    // ---------- ترجمة النصوص (عربي/إنجليزي) ----------
+    const translations = {
+        ar: {
+            appTitle: "📝 دفتر السحابة",
+            loginTitle: "تسجيل الدخول",
+            username: "اسم المستخدم",
+            password: "كلمة المرور",
+            loginBtn: "دخول",
+            noAccount: "ليس لديك حساب؟",
+            registerNew: "تسجيل جديد",
+            registerTitle: "إنشاء حساب جديد",
+            registerBtn: "إنشاء حساب",
+            backToLogin: "→ العودة لتسجيل الدخول",
+            notePlaceholder: "اكتب ملاحظتك هنا... يمكنك كتابة نصوص طويلة جداً دون حدود حقيقية...",
+            addNote: "+ إضافة ملاحظة",
+            myNotes: "ملاحظاتي",
+            logout: "🚪 تسجيل الخروج",
+            welcome: "مرحباً",
+            deleteNote: "حذف",
+            noNotes: "📭 لا توجد ملاحظات بعد. أضف ملاحظتك الأولى!",
+            errorUserExists: "اسم المستخدم موجود مسبقاً! اختر اسماً آخر.",
+            errorEmptyFields: "الرجاء ملء جميع الحقول.",
+            errorWrongCreds: "اسم المستخدم أو كلمة المرور غير صحيحة.",
+            allUsersList: "جميع المستخدمين المسجلين:",
+            showAllUsers: "👥 عرض كل المستخدمين",
+            noteDeleted: "تم حذف الملاحظة",
+            langEn: "English",
+            langAr: "العربية"
+        },
+        en: {
+            appTitle: "📝 Cloud Notes",
+            loginTitle: "Login",
+            username: "Username",
+            password: "Password",
+            loginBtn: "Login",
+            noAccount: "Don't have an account?",
+            registerNew: "Sign Up",
+            registerTitle: "Create New Account",
+            registerBtn: "Register",
+            backToLogin: "→ Back to Login",
+            notePlaceholder: "Write your note here... You can write long texts without real limits...",
+            addNote: "+ Add Note",
+            myNotes: "My Notes",
+            logout: "🚪 Logout",
+            welcome: "Welcome",
+            deleteNote: "Delete",
+            noNotes: "📭 No notes yet. Add your first note!",
+            errorUserExists: "Username already exists! Choose another.",
+            errorEmptyFields: "Please fill all fields.",
+            errorWrongCreds: "Incorrect username or password.",
+            allUsersList: "All registered users:",
+            showAllUsers: "👥 Show All Users",
+            noteDeleted: "Note deleted",
+            langEn: "العربية",
+            langAr: "English"
+        }
+    };
+    
+    function t(key) {
+        return translations[currentLang][key] || key;
+    }
+    
+    // تحديث اتجاه الصفحة حسب اللغة
+    function updateDirAndLang() {
+        const root = document.getElementById("appRoot");
+        if (currentLang === "ar") {
+            root.parentElement.setAttribute("dir", "rtl");
+            root.parentElement.setAttribute("lang", "ar");
+        } else {
+            root.parentElement.setAttribute("dir", "ltr");
+            root.parentElement.setAttribute("lang", "en");
+        }
+    }
+    
+    // تطبيق الوضع المظلم
+    function applyTheme() {
+        if (isDark) {
+            document.body.classList.add("dark");
+        } else {
+            document.body.classList.remove("dark");
+        }
+        localStorage.setItem("app_theme", isDark ? "dark" : "light");
+    }
+    
+    // تحميل الإعدادات المحفوظة
+    function loadSettings() {
+        const savedTheme = localStorage.getItem("app_theme");
+        if (savedTheme === "dark") {
+            isDark = true;
+        } else {
+            isDark = false;
+        }
+        const savedLang = localStorage.getItem("app_lang");
+        if (savedLang === "en") {
+            currentLang = "en";
+        } else {
+            currentLang = "ar";
+        }
+        applyTheme();
+        updateDirAndLang();
+    }
+    
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem("app_lang", lang);
+        updateDirAndLang();
+        render(); // إعادة رسم كامل
+    }
+    
+    function toggleTheme() {
+        isDark = !isDark;
+        applyTheme();
+        render();
+    }
+    
+    // ---------- دوال المستخدمين (localStorage) ----------
+    function getUsers() {
+        const usersRaw = localStorage.getItem(STORAGE_USERS);
+        if (!usersRaw) return [];
+        try {
+            return JSON.parse(usersRaw);
+        } catch(e) { return []; }
+    }
+    
+    function saveUsers(users) {
+        localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    }
+    
+    // تسجيل مستخدم جديد (يمنع تكرار username)
+    function registerUser(username, password) {
+        if (!username || !password) return { success: false, msg: t("errorEmptyFields") };
+        const users = getUsers();
+        const exists = users.some(u => u.username === username);
+        if (exists) return { success: false, msg: t("errorUserExists") };
+        users.push({ username, password });
+        saveUsers(users);
+        // إنشاء مساحة ملاحظات للمستخدم الجديد
+        const notesKey = STORAGE_NOTES_PREFIX + username;
+        if (!localStorage.getItem(notesKey)) {
+            localStorage.setItem(notesKey, JSON.stringify([]));
+        }
+        return { success: true };
+    }
+    
+    // التحقق من تسجيل الدخول
+    function loginUser(username, password) {
+        const users = getUsers();
+        const user = users.find(u => u.username === username && u.password === password);
+        if (user) {
+            return { success: true, user };
+        }
+        return { success: false, msg: t("errorWrongCreds") };
+    }
+    
+    // جلب ملاحظات المستخدم
+    function getUserNotes(username) {
+        const key = STORAGE_NOTES_PREFIX + username;
+        const raw = localStorage.getItem(key);
+        if (!raw) return [];
+        try {
+            return JSON.parse(raw);
+        } catch(e) { return []; }
+    }
+    
+    // حفظ ملاحظات المستخدم
+    function saveUserNotes(username, notes) {
+        const key = STORAGE_NOTES_PREFIX + username;
+        localStorage.setItem(key, JSON.stringify(notes));
+    }
+    
+    // إضافة ملاحظة جديدة
+    function addNote(username, text) {
+        if (!text.trim()) return false;
+        const notes = getUserNotes(username);
+        const newNote = {
+            id: Date.now() + Math.random() * 10000,
+            text: text.trim(),
+            createdAt: new Date().toISOString()
+        };
+        notes.push(newNote);
+        saveUserNotes(username, notes);
+        return true;
+    }
+    
+    function deleteNote(username, noteId) {
+        let notes = getUserNotes(username);
+        notes = notes.filter(n => n.id != noteId);
+        saveUserNotes(username, notes);
+        return true;
+    }
+    
+    // عرض كل المستخدمين (للإدارة في الواجهة)
+    function getAllUsersList() {
+        return getUsers();
+    }
+    
+    // -------- واجهة المستخدم الديناميكية ----------
+    function render() {
+        const root = document.getElementById("appRoot");
+        if (!root) return;
+        
+        // إذا لم يكن هناك مستخدم مسجل دخوله -> عرض شاشة Auth
+        if (!currentUser) {
+            root.innerHTML = renderAuthScreen();
+            attachAuthEvents();
+        } else {
+            root.innerHTML = renderNotesDashboard();
+            attachNotesEvents();
+        }
+        // ربط أزرار التيم واللغة دائماً
+        attachGlobalEvents();
+    }
+    
+    function renderAuthScreen() {
+        // شاشة بها نموذج تسجيل الدخول + رابط للتسجيل
+        return `
+            <div class="card" style="max-width: 500px; margin: 0 auto;">
+                <div class="controls-bar" style="margin-bottom: 0.5rem;">
+                    <h2>${t("appTitle")}</h2>
+                    <div class="theme-lang">
+                        <div class="toggle">
+                            <input type="checkbox" id="globalThemeToggle" ${isDark ? 'checked' : ''}>
+                            <label for="globalThemeToggle"></label>
+                        </div>
+                        <button id="globalLangBtn" class="icon-btn">${currentLang === "ar" ? t("langEn") : t("langAr")}</button>
+                    </div>
+                </div>
+                <div id="authDynamicForm">
+                    ${renderLoginForm()}
+                </div>
+            </div>
+        `;
+    }
+    
+    function renderLoginForm() {
+        return `
+            <h3>${t("loginTitle")}</h3>
+            <div style="margin: 1rem 0;">
+                <input type="text" id="loginUsername" placeholder="${t("username")}" autocomplete="off" />
+            </div>
+            <div style="margin: 1rem 0;">
+                <input type="password" id="loginPassword" placeholder="${t("password")}" />
+            </div>
+            <button id="doLoginBtn">${t("loginBtn")}</button>
+            <div class="auth-switch">
+                <p>${t("noAccount")} <button id="switchToRegisterBtn" class="icon-btn" style="background:transparent; color:var(--btn-primary);">${t("registerNew")}</button></p>
+            </div>
+            <div id="authErrorMsg" class="error-msg"></div>
+        `;
+    }
+    
+    function renderRegisterForm() {
+        return `
+            <h3>${t("registerTitle")}</h3>
+            <div style="margin: 1rem 0;">
+                <input type="text" id="regUsername" placeholder="${t("username")}" autocomplete="off" />
+            </div>
+            <div style="margin: 1rem 0;">
+                <input type="password" id="regPassword" placeholder="${t("password")}" />
+            </div>
+            <button id="doRegisterBtn">${t("registerBtn")}</button>
+            <div class="auth-switch">
+                <button id="switchToLoginBtn" class="icon-btn" style="background:transparent; color:var(--btn-primary);">${t("backToLogin")}</button>
+            </div>
+            <div id="authErrorMsg" class="error-msg"></div>
+        `;
+    }
+    
+    function attachAuthEvents() {
+        const loginBtn = document.getElementById("doLoginBtn");
+        const switchReg = document.getElementById("switchToRegisterBtn");
+        const switchLogin = document.getElementById("switchToLoginBtn");
+        const registerBtn = document.getElementById("doRegisterBtn");
+        
+        if (loginBtn) {
+            loginBtn.onclick = () => {
+                const username = document.getElementById("loginUsername")?.value.trim();
+                const password = document.getElementById("loginPassword")?.value;
+                if (!username || !password) {
+                    showAuthError(t("errorEmptyFields"));
+                    return;
+                }
+                const res = loginUser(username, password);
+                if (res.success) {
+                    currentUser = res.user;
+                    render();
+                } else {
+                    showAuthError(res.msg);
+                }
+            };
+        }
+        if (switchReg) {
+            switchReg.onclick = () => {
+                const dynamicDiv = document.getElementById("authDynamicForm");
+                if (dynamicDiv) dynamicDiv.innerHTML = renderRegisterForm();
+                attachAuthEvents();
+            };
+        }
+        if (switchLogin) {
+            switchLogin.onclick = () => {
+                const dynamicDiv = document.getElementById("authDynamicForm");
+                if (dynamicDiv) dynamicDiv.innerHTML = renderLoginForm();
+                attachAuthEvents();
+            };
+        }
+        if (registerBtn) {
+            registerBtn.onclick = () => {
+                const username = document.getElementById("regUsername")?.value.trim();
+                const password = document.getElementById("regPassword")?.value;
+                if (!username || !password) {
+                    showAuthError(t("errorEmptyFields"));
+                    return;
+                }
+                const regRes = registerUser(username, password);
+                if (regRes.success) {
+                    const dynamicDiv = document.getElementById("authDynamicForm");
+                    if (dynamicDiv) dynamicDiv.innerHTML = renderLoginForm();
+                    attachAuthEvents();
+                    showAuthError("✅ تم إنشاء الحساب بنجاح! سجل دخول الآن.", true);
+                } else {
+                    showAuthError(regRes.msg);
+                }
+            };
+        }
+    }
+    
+    function showAuthError(msg, isSuccess = false) {
+        const errDiv = document.getElementById("authErrorMsg");
+        if (errDiv) {
+            errDiv.innerText = msg;
+            errDiv.style.color = isSuccess ? "var(--success)" : "var(--danger)";
+            setTimeout(() => {
+                if (errDiv) errDiv.innerText = "";
+            }, 3000);
+        }
+    }
+    
+    // لوحة الملاحظات بعد تسجيل الدخول
+    function renderNotesDashboard() {
+        const notes = getUserNotes(currentUser.username);
+        const allUsers = getAllUsersList();
+        return `
+            <div class="card">
+                <div class="controls-bar">
+                    <h2>${t("appTitle")}</h2>
+                    <div class="theme-lang">
+                        <div class="toggle">
+                            <input type="checkbox" id="globalThemeToggle" ${isDark ? 'checked' : ''}>
+                            <label for="globalThemeToggle"></label>
+                        </div>
+                        <button id="globalLangBtn" class="icon-btn">${currentLang === "ar" ? t("langEn") : t("langAr")}</button>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap:wrap; gap:10px;">
+                    <div><strong>${t("welcome")} ${currentUser.username} ✨</strong></div>
+                    <div class="flex-btns">
+                        <button id="showAllUsersBtn" class="icon-btn">${t("showAllUsers")}</button>
+                        <button id="logoutBtn" class="btn-danger">${t("logout")}</button>
+                    </div>
+                </div>
+                <hr />
+                <textarea id="newNoteText" rows="4" placeholder="${t("notePlaceholder")}"></textarea>
+                <div style="margin-top: 0.8rem;">
+                    <button id="addNoteBtn" class="btn-success">${t("addNote")}</button>
+                </div>
+                
+                <h3 style="margin-top: 2rem;">📌 ${t("myNotes")}</h3>
+                <div id="notesListContainer">
+                    ${renderNotesList(notes)}
+                </div>
+                <div id="allUsersPanel" style="margin-top: 2rem; display: none; background: var(--btn-secondary); border-radius: 1rem; padding: 1rem;"></div>
+            </div>
+        `;
+    }
+    
+    function renderNotesList(notes) {
+        if (!notes.length) {
+            return `<div class="note-card" style="text-align:center;">${t("noNotes")}</div>`;
+        }
+        const sorted = [...notes].reverse();
+        return `<div class="notes-grid">` + sorted.map(note => `
+            <div class="note-card" data-id="${note.id}">
+                <div class="note-text">${escapeHtml(note.text)}</div>
+                <div class="note-date">
+                    <span>${new Date(note.createdAt).toLocaleString()}</span>
+                    <button class="small-btn btn-danger delete-note-btn" data-id="${note.id}">${t("deleteNote")}</button>
+                </div>
+            </div>
+        `).join('') + `</div>`;
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+    
+    function attachNotesEvents() {
+        const addBtn = document.getElementById("addNoteBtn");
+        const noteTextarea = document.getElementById("newNoteText");
+        if (addBtn) {
+            addBtn.onclick = () => {
+                const text = noteTextarea?.value;
+                if (text && text.trim()) {
+                    addNote(currentUser.username, text);
+                    noteTextarea.value = "";
+                    render();
+                } else {
+                    alert("✏️ " + (currentLang === "ar" ? "لا يمكن إضافة ملاحظة فارغة!" : "Cannot add empty note!"));
+                }
+            };
+        }
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+            logoutBtn.onclick = () => {
+                currentUser = null;
+                render();
+            };
+        }
+        document.querySelectorAll(".delete-note-btn").forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute("data-id");
+                if (id) {
+                    deleteNote(currentUser.username, id);
+                    render();
+                }
+            };
+        });
+        const showAllBtn = document.getElementById("showAllUsersBtn");
+        if (showAllBtn) {
+            showAllBtn.onclick = () => {
+                const allUsers = getAllUsersList();
+                const panel = document.getElementById("allUsersPanel");
+                if (panel) {
+                    if (panel.style.display === "none" || !panel.style.display) {
+                        if (allUsers.length === 0) {
+                            panel.innerHTML = `<p>${currentLang === "ar" ? "لا يوجد مستخدمون مسجلون" : "No registered users"}</p>`;
+                        } else {
+                            let listHtml = `<strong>${t("allUsersList")}</strong><ul style="margin-top:0.5rem;">`;
+                            allUsers.forEach(u => {
+                                listHtml += `<li>${escapeHtml(u.username)} (${u.password})</li>`;
+                            });
+                            listHtml += `</ul>`;
+                            panel.innerHTML = listHtml;
+                        }
+                        panel.style.display = "block";
+                    } else {
+                        panel.style.display = "none";
+                    }
+                }
+            };
+        }
+    }
+    
+    function attachGlobalEvents() {
+        const themeToggle = document.getElementById("globalThemeToggle");
+        if (themeToggle) {
+            const newToggle = themeToggle.cloneNode(true);
+            themeToggle.parentNode.replaceChild(newToggle, themeToggle);
+            newToggle.onchange = (e) => {
+                isDark = e.target.checked;
+                applyTheme();
+                render();
+            };
+        }
+        const langBtn = document.getElementById("globalLangBtn");
+        if (langBtn) {
+            const newLangBtn = langBtn.cloneNode(true);
+            langBtn.parentNode.replaceChild(newLangBtn, langBtn);
+            newLangBtn.onclick = () => {
+                const newLang = currentLang === "ar" ? "en" : "ar";
+                setLang(newLang);
+            };
+        }
+    }
+    
+    function initDefaultData() {
+        // لا نضيف بيانات افتراضية
+    }
+    
+    function init() {
+        loadSettings();
+        initDefaultData();
+        render();
+    }
+    
+    init();
+</script>
+</body>
+</html>
