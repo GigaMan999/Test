@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>G_Note - دفتر الملاحظات السحابي</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%232c7da0' rx='20'/%3E%3Ctext x='50' y='68' font-size='48' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'%3EG%3C/text%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', 'Tajawal', 'Roboto', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body:not(.dark) {
+            background: linear-gradient(135deg, #87CEEB 0%, #98D8E8 30%, #E0F6FF 100%);
+        }
+
+        body.dark {
+            background: linear-gradient(145deg, #0a0f1a 0%, #0f1422 30%, #151c2c 100%);
+        }
+
+        body.dark .stars { display: block; }
+        .stars {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        body:not(.dark) .clouds { display: block; }
+        .clouds {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 1000px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            animation: floatCloud 40s linear infinite;
+        }
+        @keyframes floatCloud {
+            from { transform: translateX(-20%); }
+            to { transform: translateX(120%); }
+        }
+
+        body:not(.dark) .sun-effect { display: block; }
+        .sun-effect {
+            display: none;
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+            animation: sunGlow 3s infinite alternate;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes sunGlow {
+            from { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); transform: scale(1); }
+            to { box-shadow: 0 0 80px rgba(255, 215, 0, 0.8); transform: scale(1.05); }
+        }
+
+        body.dark .moon-effect { display: block; }
+        .moon-effect {
+            display: none;
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, #F9F3D9, #E8E0C5);
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(255, 245, 200, 0.5);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        :root {
+            --bg-page: rgba(244, 247, 252, 0.85);
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --text-primary: #1e2a3e;
+            --text-secondary: #334e68;
+            --border: rgba(220, 229, 239, 0.8);
+            --input-bg: rgba(255, 255, 255, 0.95);
+            --btn-primary: #2c7da0;
+            --btn-primary-hover: #1f5e7a;
+            --btn-secondary: rgba(233, 236, 239, 0.9);
+            --btn-secondary-hover: #dce2e8;
+            --danger: #e53e3e;
+            --danger-hover: #c53030;
+            --success: #2b9348;
+            --success-hover: #1f723a;
+            --warning: #e67e22;
+            --warning-hover: #d35400;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --note-bg: rgba(254, 249, 227, 0.95);
+        }
+
+        body.dark {
+            --bg-page: rgba(18, 24, 38, 0.88);
+            --card-bg: rgba(30, 41, 59, 0.92);
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e6;
+            --border: rgba(45, 58, 78, 0.8);
+            --input-bg: rgba(15, 23, 42, 0.95);
+            --btn-secondary: rgba(51, 65, 85, 0.9);
+            --btn-secondary-hover: #475569;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --note-bg: rgba(45, 42, 30, 0.95);
+        }
+
+        .app-container {
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .theme-lang { display: flex; gap: 0.75rem; align-items: center; }
+        .icon-btn {
+            background: var(--btn-secondary);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .icon-btn:hover { background: var(--btn-secondary-hover); transform: scale(0.97); }
+        input, textarea {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus { border-color: var(--btn-primary); box-shadow: 0 0 0 2px rgba(44, 125, 160, 0.3); }
+        button {
+            background: var(--btn-primary);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: var(--btn-primary-hover); transform: translateY(-1px); }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: var(--danger-hover); }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); }
+        .btn-warning:hover { background: var(--warning-hover); }
+        .notes-grid, .messages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+        .note-card, .message-card {
+            background: var(--note-bg);
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            border-right: 4px solid var(--btn-primary);
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .note-text, .message-text { font-size: 1rem; line-height: 1.5; margin-bottom: 1rem; }
+        .note-date, .message-date {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .note-actions, .message-actions { display: flex; gap: 0.5rem; }
+        .auth-switch { text-align: center; margin-top: 1.5rem; }
+        .error-msg {
+            color: var(--danger);
+            background: rgba(229, 62, 62, 0.1);
+            padding: 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+        hr { margin: 1rem 0; border-color: var(--border); }
+        textarea { min-height: 180px; resize: vertical; }
+        .small-btn { padding: 0.3rem 0.8rem; font-size: 0.7rem; border-radius: 1rem; }
+        .edit-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .edit-modal {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+        }
+        .edit-modal textarea { margin: 1rem 0; min-height: 150px; }
+        .edit-modal-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+        .tab-btn {
+            background: transparent;
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+        .tab-btn.active { background: var(--btn-primary); color: white; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .admin-table th, .admin-table td { padding: 0.75rem; text-align: right; border-bottom: 1px solid var(--border); }
+        .blocked-screen {
+            text-align: center;
+            padding: 3rem;
+            background: var(--card-bg);
+            border-radius: 2rem;
+            max-width: 500px;
+            margin: auto;
+        }
+        .blocked-screen h1 { color: var(--danger); font-size: 3rem; margin-bottom: 1rem; }
+        .themeToggle {
+            --toggle-width: 60px;
+            --toggle-height: 30px;
+            background-color: #e0e5ec;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            position: relative;
+            cursor: pointer;
+            width: var(--toggle-width);
+            height: var(--toggle-height);
+        }
+        .themeToggleInput { position: absolute; opacity: 0; width: 0; height: 0; }
+        .themeToggle svg { width: 18px; height: 18px; transition: transform 0.4s ease; z-index: 2; color: #f1c40f; }
+        body.dark .themeToggle svg { color: #f39c12; transform: rotate(180deg); }
+        .loading { text-align: center; padding: 2rem; font-size: 1.2rem; }
+        @media (max-width: 640px) { .card { padding: 1.25rem; } h2 { font-size: 1.4rem; } }
+    </style>
+</head>
+<body>
+    <div class="stars" id="starsContainer"></div>
+    <div class="clouds" id="cloudsContainer"></div>
+    <div class="sun-effect"></div>
+    <div class="moon-effect"></div>
+    <div class="app-container" id="appRoot">
+        <div class="loading">جاري تحميل الموقع...</div>
+    </div>
+
+<script>
+    const STORAGE_USERS = "secure_notes_users";
+    const STORAGE_NOTES_PREFIX = "user_notes_";
+    const STORAGE_MESSAGES_PREFIX = "user_messages_";
+    const STORAGE_BLOCKED_IPS = "blocked_ips";
+    const STORAGE_SESSION = "current_session";
+    
+    let currentUser = null;
+    let currentLang = "ar";
+    let isDark = false;
+    let activeTab = "inbox";
+    let currentRealIP = null;
+    let ipLoaded = false;
+    
+    // جلب IP الحقيقي من API خارجي
+    async function fetchRealIP() {
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            return data.ip;
+        } catch (error) {
+            console.error("Failed to fetch IP:", error);
+            return "unknown_" + Math.random().toString(36).substr(2, 8);
+        }
+    }
+    
+    // التحقق من حظر IP
+    function isIPBlocked(ip) {
+        const blocked = JSON.parse(localStorage.getItem(STORAGE_BLOCKED_IPS) || "[]");
+        return blocked.includes(ip);
+    }
+    
+    function blockIP(ip) {
+        const blocked = JSON.parse(localStorage.getItem(STORAGE_BLOCKED_IPS) || "[]");
+        if (!blocked.includes(ip)) {
+            blocked.push(ip);
+            localStorage.setItem(STORAGE_BLOCKED_IPS, JSON.stringify(blocked));
+        }
+    }
+    
+    function unblockIP(ip) {
+        let blocked = JSON.parse(localStorage.getItem(STORAGE_BLOCKED_IPS) || "[]");
+        blocked = blocked.filter(i => i !== ip);
+        localStorage.setItem(STORAGE_BLOCKED_IPS, JSON.stringify(blocked));
+    }
+    
+    // حفظ جلسة المستخدم
+    function saveSession(user) {
+        localStorage.setItem(STORAGE_SESSION, JSON.stringify({
+            username: user.username,
+            isAdmin: user.isAdmin || false,
+            timestamp: Date.now()
+        }));
+    }
+    
+    // استعادة الجلسة
+    function restoreSession() {
+        const sessionData = localStorage.getItem(STORAGE_SESSION);
+        if (sessionData) {
+            try {
+                const session = JSON.parse(sessionData);
+                // التحقق من أن الجلسة لم تنته (7 أيام)
+                if (Date.now() - session.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                    if (session.isAdmin) {
+                        return { isAdmin: true };
+                    } else {
+                        const users = getUsers();
+                        const user = users.find(u => u.username === session.username);
+                        if (user) {
+                            return user;
+                        }
+                    }
+                } else {
+                    // انتهت الجلسة، حذفها
+                    localStorage.removeItem(STORAGE_SESSION);
+                }
+            } catch(e) {
+                localStorage.removeItem(STORAGE_SESSION);
+            }
+        }
+        return null;
+    }
+    
+    // تسجيل الخروج
+    function logout() {
+        localStorage.removeItem(STORAGE_SESSION);
+        currentUser = null;
+        render();
+    }
+    
+    // تحديث IP المستخدمين المخزنين
+    function updateUserIP(username, ip) {
+        const users = getUsers();
+        const userIndex = users.findIndex(u => u.username === username);
+        if (userIndex !== -1) {
+            users[userIndex].ip = ip;
+            saveUsers(users);
+        }
+    }
+    
+    function createStars() {
+        const container = document.getElementById('starsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 1;
+            star.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${Math.random()*2+1}s`;
+            container.appendChild(star);
+        }
+    }
+    
+    function createClouds() {
+        const container = document.getElementById('cloudsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        const clouds = [[120,70,'10%',35,0],[180,90,'25%',45,5],[100,55,'45%',30,10],[150,80,'65%',40,15],[90,50,'80%',38,20],[200,100,'5%',50,25]];
+        clouds.forEach(([w,h,t,d,de]) => {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            cloud.style.cssText = `width:${w}px;height:${h}px;top:${t};left:-${w}px;animation-duration:${d}s;animation-delay:${de}s;opacity:${0.6+Math.random()*0.3}`;
+            container.appendChild(cloud);
+        });
+    }
+    
+    const translations = {
+        ar: {
+            appTitle: "📝 G_Note", loginTitle: "تسجيل الدخول", username: "اسم المستخدم", password: "كلمة المرور",
+            loginBtn: "دخول", noAccount: "ليس لديك حساب؟", registerNew: "تسجيل جديد", registerTitle: "إنشاء حساب جديد",
+            registerBtn: "إنشاء حساب", backToLogin: "→ العودة لتسجيل الدخول", notePlaceholder: "اكتب ملاحظتك هنا...",
+            addNote: "+ إضافة ملاحظة", myNotes: "ملاحظاتي", logout: "🚪 تسجيل الخروج", welcome: "مرحباً",
+            deleteNote: "حذف", editNote: "تعديل", copyNote: "نسخ", save: "حفظ", cancel: "إلغاء", noNotes: "📭 لا توجد ملاحظات",
+            errorUserExists: "اسم المستخدم موجود!", errorEmptyFields: "املأ جميع الحقول!", errorWrongCreds: "بيانات غير صحيحة!",
+            allUsersList: "المستخدمين:", noteDeleted: "تم الحذف", noteUpdated: "تم التحديث", noteCopied: "تم النسخ!",
+            langEn: "English", langAr: "العربية", messages: "📬 الرسائل", inbox: "الوارد", outbox: "الصادر",
+            sendMessage: "إرسال رسالة", toUser: "إلى مستخدم", messageText: "نص الرسالة", send: "إرسال",
+            deleteMsg: "حذف", copyMsg: "نسخ", from: "من", to: "إلى", noMessages: "لا توجد رسائل",
+            adminPanel: "👑 لوحة التحكم", usersList: "قائمة المستخدمين", ip: "IP", block: "حظر", unblock: "إلغاء الحظر",
+            blockedUsers: "المحظورين", backToSite: "العودة للموقع", blockedMessage: "تم حظرك من الموقع",
+            blockedReason: "لا يمكنك الوصول إلى هذا الموقع بسبب حظر عنوان IP الخاص بك."
+        },
+        en: {
+            appTitle: "📝 G_Note", loginTitle: "Login", username: "Username", password: "Password",
+            loginBtn: "Login", noAccount: "No account?", registerNew: "Sign Up", registerTitle: "Create Account",
+            registerBtn: "Register", backToLogin: "→ Back to Login", notePlaceholder: "Write your note here...",
+            addNote: "+ Add Note", myNotes: "My Notes", logout: "🚪 Logout", welcome: "Welcome",
+            deleteNote: "Delete", editNote: "Edit", copyNote: "Copy", save: "Save", cancel: "Cancel", noNotes: "📭 No notes",
+            errorUserExists: "Username exists!", errorEmptyFields: "Fill all fields!", errorWrongCreds: "Wrong credentials!",
+            allUsersList: "Users:", noteDeleted: "Deleted", noteUpdated: "Updated", noteCopied: "Copied!",
+            langEn: "العربية", langAr: "English", messages: "📬 Messages", inbox: "Inbox", outbox: "Outbox",
+            sendMessage: "Send Message", toUser: "To User", messageText: "Message", send: "Send",
+            deleteMsg: "Delete", copyMsg: "Copy", from: "From", to: "To", noMessages: "No messages",
+            adminPanel: "👑 Admin Panel", usersList: "Users List", ip: "IP", block: "Block", unblock: "Unblock",
+            blockedUsers: "Blocked", backToSite: "Back to Site", blockedMessage: "You Are Blocked",
+            blockedReason: "You cannot access this site because your IP address has been blocked."
+        }
+    };
+    
+    function t(key) { return translations[currentLang][key] || key; }
+    function updateDirAndLang() {
+        const root = document.getElementById("appRoot");
+        if (currentLang === "ar") { root.parentElement.setAttribute("dir", "rtl"); root.parentElement.setAttribute("lang", "ar"); }
+        else { root.parentElement.setAttribute("dir", "ltr"); root.parentElement.setAttribute("lang", "en"); }
+    }
+    function applyTheme() {
+        if (isDark) document.body.classList.add("dark");
+        else document.body.classList.remove("dark");
+        localStorage.setItem("app_theme", isDark ? "dark" : "light");
+        if (isDark) createStars(); else createClouds();
+    }
+    function loadSettings() {
+        isDark = localStorage.getItem("app_theme") === "dark";
+        currentLang = localStorage.getItem("app_lang") === "en" ? "en" : "ar";
+        applyTheme(); updateDirAndLang();
+    }
+    function setLang(lang) { currentLang = lang; localStorage.setItem("app_lang", lang); updateDirAndLang(); render(); }
+    
+    function getUsers() { return JSON.parse(localStorage.getItem(STORAGE_USERS) || "[]"); }
+    function saveUsers(users) { localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
+    
+    function registerUser(username, password, ip) {
+        if (!username || !password) return { success: false, msg: t("errorEmptyFields") };
+        const users = getUsers();
+        if (users.some(u => u.username === username)) return { success: false, msg: t("errorUserExists") };
+        users.push({ username, password, ip: ip });
+        saveUsers(users);
+        if (!localStorage.getItem(STORAGE_NOTES_PREFIX + username)) localStorage.setItem(STORAGE_NOTES_PREFIX + username, "[]");
+        if (!localStorage.getItem(STORAGE_MESSAGES_PREFIX + username)) localStorage.setItem(STORAGE_MESSAGES_PREFIX + username, "[]");
+        return { success: true };
+    }
+    
+    function loginUser(username, password, currentIP) {
+        if (username === "999" && password === "999") {
+            return { success: true, isAdmin: true };
+        }
+        const users = getUsers();
+        const user = users.find(u => u.username === username && u.password === password);
+        if (user) {
+            if (currentIP && user.ip !== currentIP) {
+                user.ip = currentIP;
+                saveUsers(users);
+            }
+            return { success: true, user, isAdmin: false };
+        }
+        return { success: false, msg: t("errorWrongCreds") };
+    }
+    
+    function getUserNotes(username) { return JSON.parse(localStorage.getItem(STORAGE_NOTES_PREFIX + username) || "[]"); }
+    function saveUserNotes(username, notes) { localStorage.setItem(STORAGE_NOTES_PREFIX + username, JSON.stringify(notes)); }
+    function addNote(username, text) { if (!text.trim()) return false; const notes = getUserNotes(username); notes.push({ id: Date.now(), text: text.trim(), createdAt: new Date().toISOString() }); saveUserNotes(username, notes); return true; }
+    function updateNote(username, id, text) { let notes = getUserNotes(username); const idx = notes.findIndex(n => n.id == id); if (idx !== -1) { notes[idx].text = text.trim(); saveUserNotes(username, notes); return true; } return false; }
+    function deleteNote(username, id) { saveUserNotes(username, getUserNotes(username).filter(n => n.id != id)); return true; }
+    
+    function getUserMessages(username) { return JSON.parse(localStorage.getItem(STORAGE_MESSAGES_PREFIX + username) || "[]"); }
+    function saveUserMessages(username, msgs) { localStorage.setItem(STORAGE_MESSAGES_PREFIX + username, JSON.stringify(msgs)); }
+    function sendMessage(from, to, text) {
+        if (!text.trim() || !to) return false;
+        const users = getUsers();
+        if (!users.some(u => u.username === to)) return false;
+        const msg = { id: Date.now(), from, to, text: text.trim(), createdAt: new Date().toISOString() };
+        const toMsgs = getUserMessages(to);
+        toMsgs.push(msg);
+        saveUserMessages(to, toMsgs);
+        const fromMsgs = getUserMessages(from);
+        fromMsgs.push(msg);
+        saveUserMessages(from, fromMsgs);
+        return true;
+    }
+    function deleteMessage(username, msgId) { saveUserMessages(username, getUserMessages(username).filter(m => m.id != msgId)); return true; }
+    
+    function renderBlockedScreen() {
+        return `<div class="blocked-screen"><h1>⛔ ${t("blockedMessage")}</h1><p>${t("blockedReason")}</p><p style="margin-top:1rem;font-size:0.8rem;opacity:0.7;">IP: ${currentRealIP || 'unknown'}</p></div>`;
+    }
+    
+    async function initApp() {
+        loadSettings();
+        
+        // جلب IP الحقيقي
+        currentRealIP = await fetchRealIP();
+        ipLoaded = true;
+        
+        // التحقق من الحظر
+        if (isIPBlocked(currentRealIP)) {
+            document.getElementById("appRoot").innerHTML = renderBlockedScreen();
+            return;
+        }
+        
+        // استعادة الجلسة المحفوظة
+        const savedSession = restoreSession();
+        if (savedSession) {
+            if (savedSession.isAdmin) {
+                currentUser = { isAdmin: true };
+            } else {
+                currentUser = savedSession;
+            }
+        }
+        
+        render();
+    }
+    
+    function render() {
+        const root = document.getElementById("appRoot");
+        if (!root) return;
+        
+        if (!currentUser) {
+            root.innerHTML = renderAuthScreen();
+            attachAuthEvents();
+        } else if (currentUser.isAdmin) {
+            root.innerHTML = renderAdminPanel();
+            attachAdminEvents();
+        } else {
+            root.innerHTML = renderUserDashboard();
+            attachUserEvents();
+        }
+        attachGlobalEvents();
+    }
+    
+    function renderAuthScreen() {
+        return `<div class="card" style="max-width:500px;margin:0 auto"><div class="controls-bar"><h2>${t("appTitle")}</h2><div class="theme-lang"><label class="themeToggle"><input type="checkbox" id="globalThemeToggle" ${isDark ? 'checked' : ''}><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><mask id="moon-mask"><rect width="20" height="20" fill="white"></rect><circle cx="11" cy="3" r="8" fill="black"></circle></mask><circle class="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)"></circle><g>${[18,14,6,2,6,14].map((x,i)=>`<circle class="sunRay" cx="${x}" cy="${[10,16.928,16.928,10,3.1718,3.1718][i]}" r="1.5"></circle>`).join("")}</g></svg></label><button id="globalLangBtn" class="icon-btn">${currentLang==="ar"?t("langEn"):t("langAr")}</button></div></div><div id="authDynamicForm">${renderLoginForm()}</div></div>`;
+    }
+    function renderLoginForm() { return `<h3>${t("loginTitle")}</h3><div style="margin:1rem 0"><input type="text" id="loginUsername" placeholder="${t("username")}" autocomplete="off"></div><div style="margin:1rem 0"><input type="password" id="loginPassword" placeholder="${t("password")}"></div><button id="doLoginBtn">${t("loginBtn")}</button><div class="auth-switch"><p>${t("noAccount")} <button id="switchToRegisterBtn" class="icon-btn" style="background:transparent">${t("registerNew")}</button></p></div><div id="authErrorMsg" class="error-msg"></div>`; }
+    function renderRegisterForm() { return `<h3>${t("registerTitle")}</h3><div style="margin:1rem 0"><input type="text" id="regUsername" placeholder="${t("username")}" autocomplete="off"></div><div style="margin:1rem 0"><input type="password" id="regPassword" placeholder="${t("password")}"></div><button id="doRegisterBtn">${t("registerBtn")}</button><div class="auth-switch"><button id="switchToLoginBtn" class="icon-btn" style="background:transparent">${t("backToLogin")}</button></div><div id="authErrorMsg" class="error-msg"></div>`; }
+    
+    function attachAuthEvents() {
+        const usernameInput = document.getElementById("loginUsername");
+        const passwordInput = document.getElementById("loginPassword");
+        const loginBtn = document.getElementById("doLoginBtn");
+        
+        if (usernameInput) {
+            usernameInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    passwordInput?.focus();
+                }
+            });
+        }
+        
+        if (passwordInput) {
+            passwordInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    loginBtn?.click();
+                }
+            });
+        }
+        
+        if (loginBtn) {
+            loginBtn.onclick = () => {
+                const u = document.getElementById("loginUsername")?.value.trim(), p = document.getElementById("loginPassword")?.value;
+                if (!u || !p) return showAuthError(t("errorEmptyFields"));
+                const res = loginUser(u, p, currentRealIP);
+                if (res.success) { 
+                    currentUser = res.isAdmin ? { isAdmin: true } : res.user;
+                    if (!res.isAdmin) {
+                        saveSession(currentUser);
+                    }
+                    render(); 
+                }
+                else showAuthError(res.msg);
+            };
+        }
+        
+        document.getElementById("switchToRegisterBtn")?.addEventListener("click", () => { document.getElementById("authDynamicForm").innerHTML = renderRegisterForm(); attachAuthEvents(); });
+        document.getElementById("switchToLoginBtn")?.addEventListener("click", () => { document.getElementById("authDynamicForm").innerHTML = renderLoginForm(); attachAuthEvents(); });
+        
+        const regBtn = document.getElementById("doRegisterBtn");
+        if (regBtn) {
+            regBtn.onclick = () => {
+                const u = document.getElementById("regUsername")?.value.trim(), p = document.getElementById("regPassword")?.value;
+                if (!u || !p) return showAuthError(t("errorEmptyFields"));
+                const res = registerUser(u, p, currentRealIP);
+                if (res.success) { document.getElementById("authDynamicForm").innerHTML = renderLoginForm(); attachAuthEvents(); showAuthError("✅ تم إنشاء الحساب!", true); }
+                else showAuthError(res.msg);
+            };
+        }
+    }
+    function showAuthError(msg, success=false) { const d=document.getElementById("authErrorMsg"); if(d){ d.innerText=msg; d.style.color=success?"var(--success)":"var(--danger)"; setTimeout(()=>d.innerText="",3000); } }
+    
+    function renderUserDashboard() {
+        const notes = getUserNotes(currentUser.username);
+        const msgs = getUserMessages(currentUser.username);
+        const inbox = msgs.filter(m => m.to === currentUser.username);
+        const outbox = msgs.filter(m => m.from === currentUser.username);
+        return `<div class="card"><div class="controls-bar"><h2>${t("appTitle")}</h2><div class="theme-lang"><label class="themeToggle"><input type="checkbox" id="globalThemeToggle" ${isDark ? 'checked' : ''}><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><mask id="moon-mask"><rect width="20" height="20" fill="white"></rect><circle cx="11" cy="3" r="8" fill="black"></circle></mask><circle class="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)"></circle><g>${[18,14,6,2,6,14].map((x,i)=>`<circle class="sunRay" cx="${x}" cy="${[10,16.928,16.928,10,3.1718,3.1718][i]}" r="1.5"></circle>`).join("")}</g></svg></label><button id="globalLangBtn" class="icon-btn">${currentLang==="ar"?t("langEn"):t("langAr")}</button></div></div>
+        <div><strong>${t("welcome")} ${currentUser.username} ✨</strong> <button id="logoutBtn" class="btn-danger" style="float:left">${t("logout")}</button></div><hr>
+        <textarea id="newNoteText" rows="3" placeholder="${t("notePlaceholder")}"></textarea><button id="addNoteBtn" class="btn-success" style="margin-top:0.5rem">${t("addNote")}</button>
+        <h3>📌 ${t("myNotes")}</h3><div id="notesList">${renderNotesList(notes)}</div>
+        <hr><h3>📬 ${t("messages")}</h3>
+        <div class="tabs"><button class="tab-btn ${activeTab==='inbox'?'active':''}" data-tab="inbox">${t("inbox")}</button><button class="tab-btn ${activeTab==='outbox'?'active':''}" data-tab="outbox">${t("outbox")}</button><button class="tab-btn ${activeTab==='send'?'active':''}" data-tab="send">${t("sendMessage")}</button></div>
+        <div id="messagesContent">${activeTab === 'inbox' ? renderMessagesList(inbox, 'inbox') : activeTab === 'outbox' ? renderMessagesList(outbox, 'outbox') : renderSendMessageForm()}</div>
+        </div>`;
+    }
+    function renderNotesList(notes) { if(!notes.length) return `<div class="note-card">${t("noNotes")}</div>`; return `<div class="notes-grid">${[...notes].reverse().map(n=>`<div class="note-card"><div class="note-text">${escapeHtml(n.text)}</div><div class="note-date"><span>${new Date(n.createdAt).toLocaleString()}</span><div class="note-actions"><button class="small-btn btn-warning edit-note" data-id="${n.id}">${t("editNote")}</button><button class="small-btn btn-warning copy-note" data-text="${escapeHtml(n.text)}">${t("copyNote")}</button><button class="small-btn btn-danger delete-note" data-id="${n.id}">${t("deleteNote")}</button></div></div></div>`).join('')}</div>`; }
+    function renderMessagesList(msgs, type) { if(!msgs.length) return `<div class="message-card">${t("noMessages")}</div>`; return `<div class="messages-grid">${[...msgs].reverse().map(m=>`<div class="message-card"><div class="message-text">${escapeHtml(m.text)}</div><div class="message-date"><span>${type==='inbox'?t("from")+" "+m.from:t("to")+" "+m.to} | ${new Date(m.createdAt).toLocaleString()}</span><div class="message-actions"><button class="small-btn btn-warning copy-msg" data-text="${escapeHtml(m.text)}">${t("copyMsg")}</button><button class="small-btn btn-danger delete-msg" data-id="${m.id}">${t("deleteMsg")}</button></div></div></div>`).join('')}</div>`; }
+    function renderSendMessageForm() { return `<div><input type="text" id="msgTo" placeholder="${t("toUser")}" style="margin-bottom:0.5rem"><textarea id="msgText" rows="3" placeholder="${t("messageText")}"></textarea><button id="sendMsgBtn" class="btn-success" style="margin-top:0.5rem">${t("send")}</button></div>`; }
+    
+    function attachUserEvents() {
+        document.getElementById("addNoteBtn")?.addEventListener("click", () => { const t = document.getElementById("newNoteText")?.value; if(t?.trim()){ addNote(currentUser.username, t); document.getElementById("newNoteText").value=""; render(); } });
+        document.getElementById("logoutBtn")?.addEventListener("click", () => { logout(); });
+        document.querySelectorAll(".delete-note").forEach(b => b.addEventListener("click", (e) => { if(confirm(t("deleteNote"))){ deleteNote(currentUser.username, e.target.dataset.id); render(); } }));
+        document.querySelectorAll(".edit-note").forEach(b => b.addEventListener("click", (e) => { const id = e.target.dataset.id; const notes = getUserNotes(currentUser.username); const note = notes.find(n=>n.id==id); if(note) showEditModal(id, note.text); }));
+        document.querySelectorAll(".copy-note, .copy-msg").forEach(b => b.addEventListener("click", (e) => { navigator.clipboard.writeText(e.target.dataset.text); alert(t("noteCopied")); }));
+        document.querySelectorAll(".delete-msg").forEach(b => b.addEventListener("click", (e) => { if(confirm(t("deleteMsg"))){ deleteMessage(currentUser.username, parseInt(e.target.dataset.id)); render(); } }));
+        document.getElementById("sendMsgBtn")?.addEventListener("click", () => { const to = document.getElementById("msgTo")?.value.trim(); const text = document.getElementById("msgText")?.value; if(to && text && sendMessage(currentUser.username, to, text)){ render(); } else alert("خطأ في الإرسال"); });
+        document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", (e) => { activeTab = e.target.dataset.tab; render(); }));
+    }
+    
+    function renderAdminPanel() {
+        const users = getUsers();
+        const blocked = JSON.parse(localStorage.getItem(STORAGE_BLOCKED_IPS) || "[]");
+        return `<div class="card"><div class="controls-bar"><h2>${t("adminPanel")}</h2><div class="theme-lang"><label class="themeToggle"><input type="checkbox" id="globalThemeToggle" ${isDark ? 'checked' : ''}><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><mask id="moon-mask"><rect width="20" height="20" fill="white"></rect><circle cx="11" cy="3" r="8" fill="black"></circle></mask><circle class="sunMoon" cx="10" cy="10" r="8" mask="url(#moon-mask)"></circle><g>${[18,14,6,2,6,14].map((x,i)=>`<circle class="sunRay" cx="${x}" cy="${[10,16.928,16.928,10,3.1718,3.1718][i]}" r="1.5"></circle>`).join("")}</g></svg></label><button id="globalLangBtn" class="icon-btn">${currentLang==="ar"?t("langEn"):t("langAr")}</button><button id="adminLogout" class="btn-danger">${t("logout")}</button></div></div>
+        <h3>${t("usersList")}</h3><table class="admin-table"><thead><tr><th>${t("username")}</th><th>${t("ip")}</th><th>${t("block")}/${t("unblock")}</th> </thead><tbody>${users.map(u=>`<tr><td>${escapeHtml(u.username)}</td><td>${escapeHtml(u.ip || 'غير معروف')}</td><td><button class="small-btn ${blocked.includes(u.ip)?'btn-success':'btn-danger'}" data-ip="${u.ip}">${blocked.includes(u.ip)?t("unblock"):t("block")}</button></td></tr>`).join('')}</tbody></table>
+        <h3>${t("blockedUsers")}</h3><ul>${blocked.map(ip=>`<li>${ip} <button class="small-btn btn-success unblock-ip" data-ip="${ip}">${t("unblock")}</button></li>`).join('')}</ul>
+        <button id="backToSite" class="btn-secondary">${t("backToSite")}</button></div>`;
+    }
+    function attachAdminEvents() {
+        document.getElementById("adminLogout")?.addEventListener("click", () => { logout(); });
+        document.getElementById("backToSite")?.addEventListener("click", () => { logout(); });
+        document.querySelectorAll("[data-ip]").forEach(b => b.addEventListener("click", (e) => { const ip = e.target.dataset.ip; if(ip && ip !== 'غير معروف'){ if(e.target.innerText.includes(t("block"))) blockIP(ip); else unblockIP(ip); render(); } }));
+        document.querySelectorAll(".unblock-ip").forEach(b => b.addEventListener("click", (e) => { unblockIP(e.target.dataset.ip); render(); }));
+    }
+    
+    function showEditModal(id, text) {
+        const modal = document.createElement('div'); modal.className = 'edit-modal-overlay';
+        modal.innerHTML = `<div class="edit-modal"><h3>${t("editNote")}</h3><textarea id="editNoteText">${escapeHtml(text)}</textarea><div class="edit-modal-buttons"><button id="saveEditBtn" class="btn-success">${t("save")}</button><button id="cancelEditBtn" class="btn-secondary">${t("cancel")}</button></div></div>`;
+        document.body.appendChild(modal);
+        document.getElementById("saveEditBtn").onclick = () => { const newText = document.getElementById("editNoteText").value; if(newText.trim() && updateNote(currentUser.username, id, newText)) render(); modal.remove(); };
+        document.getElementById("cancelEditBtn").onclick = () => modal.remove();
+        modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
+    }
+    
+    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+    function attachGlobalEvents() {
+        const toggle = document.getElementById("globalThemeToggle");
+        if(toggle) { const clone = toggle.cloneNode(true); toggle.parentNode.replaceChild(clone, toggle); clone.onchange = (e) => { isDark = e.target.checked; applyTheme(); render(); }; }
+        const langBtn = document.getElementById("globalLangBtn");
+        if(langBtn) { const clone = langBtn.cloneNode(true); langBtn.parentNode.replaceChild(clone, langBtn); clone.onclick = () => setLang(currentLang === "ar" ? "en" : "ar"); }
+    }
+    
+    // بدء التشغيل
+    initApp();
+</script>
+</body>
+</html>
